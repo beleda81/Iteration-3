@@ -6,7 +6,7 @@ class OrderService:
         self.product_repo = product_repo
         self.order_repo = order_repo
 
-    # REQUIRED: create_order(items_data)
+   
     def create_order(self, items_data):
         order_id = len(self.order_repo.list_all()) + 1
         order = Order(order_id)
