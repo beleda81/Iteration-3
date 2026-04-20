@@ -45,7 +45,7 @@ def get_products():
     result = []
     for p in products:
         result.append({
-            "id": p.product_id,
+            "id": p.id,
             "name": p.name,
             "price": p.price
         })
