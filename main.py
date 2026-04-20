@@ -17,7 +17,10 @@ def main():
     product_repo.add(Product(2, "Scarf", 25.00))
 
     # format
-    items = [(1, 2), (2, 1)]
+    items = [
+        {"id": 1, "qty": 2},
+        {"id": 2, "qty": 1}
+    ]
 
     # create order
     order = order_service.create_order(items)
@@ -27,7 +30,7 @@ def main():
     order.print_order()
 
     # total
-    total = order_service.get_order_total(order.order_id)
+    total = order_service.get_order_total(order.id)
     print(f"Total = ${total:.2f}")
 
 
