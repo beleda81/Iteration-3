@@ -17,8 +17,11 @@ class OrderService:
 
         # retrieve + validate + create
         for item in items_data:
-            product_id = item["id"]
-            quantity = item["qty"]
+            if isinstance(item, dict):
+                product_id = item["id"]
+                quantity = item["qty"]
+            else:  # assume tuple
+                product_id, quantity = item
 
             product = self.product_repo.get(product_id)
 
