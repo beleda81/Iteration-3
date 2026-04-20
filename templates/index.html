@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order System</title>
+</head>
+<body>
+
+<h1>Order System Working</h1>
+
+<button onclick="loadProducts()">Load Products</button>
+
+<ul id="products"></ul>
+
+<h2>Orders</h2>
+<button onclick="loadOrders()">Load Orders</button>
+
+<ul id="orders"></ul>
+
+<script>
+function loadProducts() {
+    fetch("/products")
+        .then(res => res.json())
+        .then(data => {
+            let list = document.getElementById("products");
+            list.innerHTML = "";
+
+            data.forEach(p => {
+                let li = document.createElement("li");
+                li.textContent = p.name + " - $" + p.price;
+                list.appendChild(li);
+            });
+        });
+}
+    function loadOrders() {
+    fetch("/orders")
+        .then(res => res.json())
+        .then(data => {
+            let list = document.getElementById("orders");
+            list.innerHTML = "";
+
+            data.forEach(o => {
+                let li = document.createElement("li");
+                li.textContent = "Order ID: " + o.order_id;
+                list.appendChild(li);
+            });
+        });
+}
+</script>
+
+</body>
+</html>
