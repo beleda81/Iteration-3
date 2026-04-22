@@ -1,4 +1,6 @@
 from flask import Flask, jsonify
+from flask import request
+from flask import render_template
 
 from domain.models import Product
 from repository.product_repo import ProductRepository
@@ -77,6 +79,67 @@ def get_order(order_id):
         return jsonify({"error": "Order not found"}), 404
 
 
+@app.route("/orders", methods=["GET"])
+def get_orders():
+    orders = o_repo.list_all()
+
+    result = []
+    for o in orders:
+        result.append({
+            "order_id": o.id
+        })
+
+    return jsonify(result)
+
+@app.route("/orders", methods=["POST"])
+def create_order():
+    data = request.get_json()
+
+    try:
+        order = service.create_order(data)
+        return jsonify({"message": "Order created", "order_id": order.id}), 201
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/products", methods=["POST"])
+def create_product():
+    data = request.get_json()
+
+    try:
+        product = Product(data["id"], data["name"], data["price"])
+        p_repo.add(product)
+
+        return jsonify({"message": "Product created"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/orders/<int:order_id>", methods=["DELETE"])
+def delete_order(order_id):
+    order = o_repo.get(order_id)
+
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+
+    del o_repo.orders[order_id]
+
+    return jsonify({"message": "Order deleted"})
+
+
+@app.route("/products/<int:product_id>", methods=["DELETE"])
+def delete_product(product_id):
+    product = p_repo.get(product_id)
+
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+
+    del p_repo.products[product_id]
+
+    return jsonify({"message": "Product deleted"})
 
 # Run the App
 if __name__ == "__main__":
