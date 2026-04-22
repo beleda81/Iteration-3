@@ -1,50 +1,270 @@
 <!DOCTYPE html>
+
 <html>
 <head>
     <title>Order System</title>
+
+```
+<style>
+    body {
+        font-family: Arial;
+        background-color: #f0f0f0;
+    }
+
+    .container {
+        width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        border: 3px solid #333;
+        background: white;
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    button {
+        margin: 5px;
+        padding: 6px 10px;
+        cursor: pointer;
+    }
+
+    input, select {
+        margin: 5px;
+        padding: 5px;
+    }
+
+    ul {
+        background: #fafafa;
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+
+    #cartTotal {
+        font-weight: bold;
+        margin-top: 10px;
+    }
+</style>
+```
+
 </head>
 <body>
 
-<h1>Order System Working</h1>
+<div class="container">
 
+<h1>Order System</h1>
+
+<h2>Products</h2>
 <button onclick="loadProducts()">Load Products</button>
-
 <ul id="products"></ul>
 
 <h2>Orders</h2>
 <button onclick="loadOrders()">Load Orders</button>
-
 <ul id="orders"></ul>
 
+<h2>View Order Details</h2>
+<select id="orderSelect" onchange="viewOrder()"></select>
+<ul id="orderDetails"></ul>
+
+<h2>Create Order</h2>
+
+<select id="productSelect"></select> <input id="qtyInput" type="number" placeholder="Quantity"> <button onclick="addItem()">Add Item</button>
+
+<ul id="cart"></ul>
+<div id="cartTotal">Total: $0.00</div>
+
+<button onclick="createOrder()">Create Order</button>
+
+<h2>Create Product</h2>
+<input id="prodId" placeholder="ID">
+<input id="prodName" placeholder="Name">
+<input id="prodPrice" placeholder="Price">
+<button onclick="createProduct()">Create Product</button>
+
+</div>
+
 <script>
+let cart = [];
+let products = []; // store products for lookup
+
+// Load products into list AND dropdown
 function loadProducts() {
     fetch("/products")
         .then(res => res.json())
         .then(data => {
+            products = data;
+
             let list = document.getElementById("products");
+            let select = document.getElementById("productSelect");
+
             list.innerHTML = "";
+            select.innerHTML = "";
 
             data.forEach(p => {
                 let li = document.createElement("li");
-                li.textContent = p.name + " - $" + p.price;
+                li.textContent = `ID: ${p.id} - ${p.name} - $${p.price}`;
                 list.appendChild(li);
+
+                let option = document.createElement("option");
+                option.value = p.id;
+                option.textContent = p.name;
+                select.appendChild(option);
             });
         });
 }
-    function loadOrders() {
+
+// Load orders into list AND dropdown
+function loadOrders() {
     fetch("/orders")
         .then(res => res.json())
         .then(data => {
             let list = document.getElementById("orders");
+            let select = document.getElementById("orderSelect");
+
             list.innerHTML = "";
+            select.innerHTML = "";
 
             data.forEach(o => {
                 let li = document.createElement("li");
                 li.textContent = "Order ID: " + o.order_id;
                 list.appendChild(li);
+
+                let option = document.createElement("option");
+                option.value = o.order_id;
+                option.textContent = "Order " + o.order_id;
+                select.appendChild(option);
             });
+
+            if (data.length > 0) {
+                select.value = data[0].order_id;
+                viewOrder();
+            }
         });
 }
+
+// View order details
+function viewOrder() {
+    const id = document.getElementById("orderSelect").value;
+    if (!id) return;
+
+    fetch(`/orders/${id}`)
+        .then(res => res.json())
+        .then(data => {
+            let list = document.getElementById("orderDetails");
+            list.innerHTML = "";
+
+            if (data.error) {
+                list.innerHTML = "<li>Order not found</li>";
+                return;
+            }
+
+            data.items.forEach(item => {
+                let li = document.createElement("li");
+                li.textContent =
+                    `${item.product} x${item.quantity} = $${item.subtotal}`;
+                list.appendChild(li);
+            });
+
+            let total = document.createElement("li");
+            total.textContent = "Total: $" + data.total;
+            list.appendChild(total);
+        });
+}
+
+// Add item to cart
+function addItem() {
+    const id = parseInt(document.getElementById("productSelect").value);
+    const qty = parseInt(document.getElementById("qtyInput").value);
+
+    if (!qty || qty <= 0) {
+        alert("Enter valid quantity");
+        return;
+    }
+
+    const product = products.find(p => p.id === id);
+
+    cart.push({ id, qty, product });
+
+    updateCartDisplay();
+}
+
+// Update cart UI + total
+function updateCartDisplay() {
+    let list = document.getElementById("cart");
+    let totalDiv = document.getElementById("cartTotal");
+
+    list.innerHTML = "";
+
+    let total = 0;
+
+    cart.forEach(item => {
+        let subtotal = item.product.price * item.qty;
+        total += subtotal;
+
+        let li = document.createElement("li");
+        li.textContent =
+            `${item.product.name} x${item.qty} = $${subtotal.toFixed(2)}`;
+        list.appendChild(li);
+    });
+
+    totalDiv.textContent = "Total: $" + total.toFixed(2);
+}
+
+// Create order from cart
+function createOrder() {
+    if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+    }
+
+    const payload = cart.map(item => ({
+        id: item.id,
+        qty: item.qty
+    }));
+
+    fetch("/orders", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+
+        cart = [];
+        updateCartDisplay();
+
+        loadOrders();
+    });
+}
+
+// Create product
+function createProduct() {
+    const product = {
+        id: parseInt(document.getElementById("prodId").value),
+        name: document.getElementById("prodName").value,
+        price: parseFloat(document.getElementById("prodPrice").value)
+    };
+
+    fetch("/products", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(product)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        loadProducts();
+    });
+}
+
+// Initial load
+loadProducts();
+loadOrders();
 </script>
 
 </body>
