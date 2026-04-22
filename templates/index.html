@@ -55,25 +55,25 @@
 
 <h1>Order System</h1>
 
-<!-- PRODUCTS -->
+<!-- products -->
 
 <h2>Products</h2>
 <button onclick="loadProducts()">Load Products</button>
 <ul id="products"></ul>
 
-<!-- ORDERS -->
+<!--orders-->
 
 <h2>Orders</h2>
 <button onclick="loadOrders()">Load Orders</button>
 <ul id="orders"></ul>
 
-<!-- ORDER DETAILS -->
+<!-- order details -->
 
 <h2>View Order Details</h2>
 <select id="orderSelect" onchange="viewOrder()"></select>
 <ul id="orderDetails"></ul>
 
-<!-- CREATE ORDER -->
+<!-- create order -->
 
 <h2>Create Order</h2>
 
@@ -84,7 +84,7 @@
 
 <button onclick="createOrder()">Create Order</button>
 
-<!-- CREATE PRODUCT -->
+<!-- create product -->
 
 <h2>Create Product</h2>
 <input id="prodId" placeholder="ID">
@@ -99,7 +99,7 @@
 let cart = [];
 let products = [];
 
-/* ---------------- PRODUCTS ---------------- */
+/* ---------------- products ---------------- */
 function loadProducts() {
     fetch("/products")
         .then(res => res.json())
@@ -134,7 +134,7 @@ function loadProducts() {
         });
 }
 
-/* ---------------- ORDERS ---------------- */
+/* ---------------- orders ---------------- */
 function loadOrders() {
     fetch("/orders")
         .then(res => res.json())
@@ -198,7 +198,7 @@ function viewOrder() {
         });
 }
 
-/* ---------------- CART ---------------- */
+/* ---------------- cart ---------------- */
 function addItem() {
     const id = parseInt(document.getElementById("productSelect").value);
     const qty = parseInt(document.getElementById("qtyInput").value);
@@ -247,7 +247,7 @@ function updateCartDisplay() {
     totalDiv.textContent = "Total: $" + total.toFixed(2);
 }
 
-/* ---------------- CREATE ORDER ---------------- */
+/* ---------------- create order ---------------- */
 function createOrder() {
     if (cart.length === 0) {
         alert("Cart is empty");
@@ -275,7 +275,7 @@ function createOrder() {
     });
 }
 
-/* ---------------- DELETE ORDER ---------------- */
+/* ---------------- delete order ---------------- */
 function deleteOrder(id) {
     fetch(`/orders/${id}`, {
         method: "DELETE"
@@ -287,7 +287,7 @@ function deleteOrder(id) {
     });
 }
 
-/* ---------------- DELETE PRODUCT ---------------- */
+/* ---------------- delete product ---------------- */
 function deleteProduct(id) {
     fetch(`/products/${id}`, {
         method: "DELETE"
@@ -302,7 +302,7 @@ function deleteProduct(id) {
     });
 }
 
-/* ---------------- CREATE PRODUCT ---------------- */
+/* ---------------- create product ---------------- */
 function createProduct() {
     const product = {
         id: parseInt(document.getElementById("prodId").value),
