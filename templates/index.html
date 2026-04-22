@@ -48,23 +48,32 @@
 ```
 
 </head>
+
 <body>
 
 <div class="container">
 
 <h1>Order System</h1>
 
+<!-- PRODUCTS -->
+
 <h2>Products</h2>
 <button onclick="loadProducts()">Load Products</button>
 <ul id="products"></ul>
+
+<!-- ORDERS -->
 
 <h2>Orders</h2>
 <button onclick="loadOrders()">Load Orders</button>
 <ul id="orders"></ul>
 
+<!-- ORDER DETAILS -->
+
 <h2>View Order Details</h2>
 <select id="orderSelect" onchange="viewOrder()"></select>
 <ul id="orderDetails"></ul>
+
+<!-- CREATE ORDER -->
 
 <h2>Create Order</h2>
 
@@ -75,6 +84,8 @@
 
 <button onclick="createOrder()">Create Order</button>
 
+<!-- CREATE PRODUCT -->
+
 <h2>Create Product</h2>
 <input id="prodId" placeholder="ID">
 <input id="prodName" placeholder="Name">
@@ -84,10 +95,11 @@
 </div>
 
 <script>
-let cart = [];
-let products = []; // store products for lookup
 
-// Load products into list AND dropdown
+let cart = [];
+let products = [];
+
+/* ---------------- PRODUCTS ---------------- */
 function loadProducts() {
     fetch("/products")
         .then(res => res.json())
@@ -101,10 +113,19 @@ function loadProducts() {
             select.innerHTML = "";
 
             data.forEach(p => {
+                // list
                 let li = document.createElement("li");
                 li.textContent = `ID: ${p.id} - ${p.name} - $${p.price}`;
+
+                // delete product
+                let btn = document.createElement("button");
+                btn.textContent = "Delete";
+                btn.onclick = () => deleteProduct(p.id);
+
+                li.appendChild(btn);
                 list.appendChild(li);
 
+                // dropdown
                 let option = document.createElement("option");
                 option.value = p.id;
                 option.textContent = p.name;
@@ -113,7 +134,7 @@ function loadProducts() {
         });
 }
 
-// Load orders into list AND dropdown
+/* ---------------- ORDERS ---------------- */
 function loadOrders() {
     fetch("/orders")
         .then(res => res.json())
@@ -127,6 +148,13 @@ function loadOrders() {
             data.forEach(o => {
                 let li = document.createElement("li");
                 li.textContent = "Order ID: " + o.order_id;
+
+                // delete order
+                let btn = document.createElement("button");
+                btn.textContent = "Delete";
+                btn.onclick = () => deleteOrder(o.order_id);
+
+                li.appendChild(btn);
                 list.appendChild(li);
 
                 let option = document.createElement("option");
@@ -142,7 +170,6 @@ function loadOrders() {
         });
 }
 
-// View order details
 function viewOrder() {
     const id = document.getElementById("orderSelect").value;
     if (!id) return;
@@ -171,7 +198,7 @@ function viewOrder() {
         });
 }
 
-// Add item to cart
+/* ---------------- CART ---------------- */
 function addItem() {
     const id = parseInt(document.getElementById("productSelect").value);
     const qty = parseInt(document.getElementById("qtyInput").value);
@@ -188,7 +215,11 @@ function addItem() {
     updateCartDisplay();
 }
 
-// Update cart UI + total
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    updateCartDisplay();
+}
+
 function updateCartDisplay() {
     let list = document.getElementById("cart");
     let totalDiv = document.getElementById("cartTotal");
@@ -197,20 +228,26 @@ function updateCartDisplay() {
 
     let total = 0;
 
-    cart.forEach(item => {
+    cart.forEach((item, index) => {
         let subtotal = item.product.price * item.qty;
         total += subtotal;
 
         let li = document.createElement("li");
         li.textContent =
-            `${item.product.name} x${item.qty} = $${subtotal.toFixed(2)}`;
+            `${item.product.name} x${item.qty} = $${subtotal.toFixed(2)} `;
+
+        let btn = document.createElement("button");
+        btn.textContent = "Remove";
+        btn.onclick = () => removeFromCart(index);
+
+        li.appendChild(btn);
         list.appendChild(li);
     });
 
     totalDiv.textContent = "Total: $" + total.toFixed(2);
 }
 
-// Create order from cart
+/* ---------------- CREATE ORDER ---------------- */
 function createOrder() {
     if (cart.length === 0) {
         alert("Cart is empty");
@@ -224,9 +261,7 @@ function createOrder() {
 
     fetch("/orders", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     })
     .then(res => res.json())
@@ -240,7 +275,34 @@ function createOrder() {
     });
 }
 
-// Create product
+/* ---------------- DELETE ORDER ---------------- */
+function deleteOrder(id) {
+    fetch(`/orders/${id}`, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        loadOrders();
+    });
+}
+
+/* ---------------- DELETE PRODUCT ---------------- */
+function deleteProduct(id) {
+    fetch(`/products/${id}`, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+
+        loadProducts();
+        cart = [];
+        updateCartDisplay();
+    });
+}
+
+/* ---------------- CREATE PRODUCT ---------------- */
 function createProduct() {
     const product = {
         id: parseInt(document.getElementById("prodId").value),
@@ -250,9 +312,7 @@ function createProduct() {
 
     fetch("/products", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(product)
     })
     .then(res => res.json())
@@ -262,9 +322,10 @@ function createProduct() {
     });
 }
 
-// Initial load
+/* INIT */
 loadProducts();
 loadOrders();
+
 </script>
 
 </body>
