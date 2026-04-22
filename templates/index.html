@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-
 <html>
 <head>
     <title>Order System</title>
 
-```
 <style>
     body {
         font-family: Arial;
@@ -45,7 +43,6 @@
         margin-top: 10px;
     }
 </style>
-```
 
 </head>
 
@@ -55,38 +52,36 @@
 
 <h1>Order System</h1>
 
-<!-- products -->
-
+<!-- PRODUCTS -->
 <h2>Products</h2>
 <button onclick="loadProducts()">Load Products</button>
 <ul id="products"></ul>
 
-<!--orders-->
-
+<!-- ORDERS -->
 <h2>Orders</h2>
 <button onclick="loadOrders()">Load Orders</button>
 <ul id="orders"></ul>
 
-<!-- order details -->
-
+<!-- ORDER DETAILS -->
 <h2>View Order Details</h2>
 <select id="orderSelect" onchange="viewOrder()"></select>
 <ul id="orderDetails"></ul>
 
-<!-- create order -->
-
+<!-- CREATE ORDER -->
 <h2>Create Order</h2>
 
-<select id="productSelect"></select> <input id="qtyInput" type="number" placeholder="Quantity"> <button onclick="addItem()">Add Item</button>
+<select id="productSelect"></select>
+<input id="qtyInput" type="number" placeholder="Quantity">
+<button onclick="addItem()">Add Item</button>
 
 <ul id="cart"></ul>
 <div id="cartTotal">Total: $0.00</div>
 
 <button onclick="createOrder()">Create Order</button>
 
-<!-- create product -->
-
+<!-- CREATE PRODUCT -->
 <h2>Create Product</h2>
+
 <input id="prodId" placeholder="ID">
 <input id="prodName" placeholder="Name">
 <input id="prodPrice" placeholder="Price">
@@ -96,10 +91,22 @@
 
 <script>
 
+/* =========================
+   STATE
+========================= */
 let cart = [];
 let products = [];
 
-/* ---------------- products ---------------- */
+/* =========================
+   INIT (NO AUTO LOADING)
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+    // intentionally empty
+});
+
+/* =========================
+   PRODUCTS
+========================= */
 function loadProducts() {
     fetch("/products")
         .then(res => res.json())
@@ -113,11 +120,9 @@ function loadProducts() {
             select.innerHTML = "";
 
             data.forEach(p => {
-                // list
                 let li = document.createElement("li");
                 li.textContent = `ID: ${p.id} - ${p.name} - $${p.price}`;
 
-                // delete product
                 let btn = document.createElement("button");
                 btn.textContent = "Delete";
                 btn.onclick = () => deleteProduct(p.id);
@@ -125,7 +130,6 @@ function loadProducts() {
                 li.appendChild(btn);
                 list.appendChild(li);
 
-                // dropdown
                 let option = document.createElement("option");
                 option.value = p.id;
                 option.textContent = p.name;
@@ -134,7 +138,39 @@ function loadProducts() {
         });
 }
 
-/* ---------------- orders ---------------- */
+function createProduct() {
+    const product = {
+        id: parseInt(document.getElementById("prodId").value),
+        name: document.getElementById("prodName").value,
+        price: parseFloat(document.getElementById("prodPrice").value)
+    };
+
+    fetch("/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(product)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        loadProducts();
+    });
+}
+
+function deleteProduct(id) {
+    fetch(`/products/${id}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            loadProducts();
+            cart = [];
+            updateCartDisplay();
+        });
+}
+
+/* =========================
+   ORDERS
+========================= */
 function loadOrders() {
     fetch("/orders")
         .then(res => res.json())
@@ -149,7 +185,6 @@ function loadOrders() {
                 let li = document.createElement("li");
                 li.textContent = "Order ID: " + o.order_id;
 
-                // delete order
                 let btn = document.createElement("button");
                 btn.textContent = "Delete";
                 btn.onclick = () => deleteOrder(o.order_id);
@@ -198,7 +233,43 @@ function viewOrder() {
         });
 }
 
-/* ---------------- cart ---------------- */
+function createOrder() {
+    if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+    }
+
+    const payload = cart.map(item => ({
+        id: item.id,
+        qty: item.qty
+    }));
+
+    fetch("/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error);
+        cart = [];
+        updateCartDisplay();
+        loadOrders();
+    });
+}
+
+function deleteOrder(id) {
+    fetch(`/orders/${id}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message || data.error);
+            loadOrders();
+        });
+}
+
+/* =========================
+   CART
+========================= */
 function addItem() {
     const id = parseInt(document.getElementById("productSelect").value);
     const qty = parseInt(document.getElementById("qtyInput").value);
@@ -209,7 +280,6 @@ function addItem() {
     }
 
     const product = products.find(p => p.id === id);
-
     cart.push({ id, qty, product });
 
     updateCartDisplay();
@@ -246,85 +316,6 @@ function updateCartDisplay() {
 
     totalDiv.textContent = "Total: $" + total.toFixed(2);
 }
-
-/* ---------------- create order ---------------- */
-function createOrder() {
-    if (cart.length === 0) {
-        alert("Cart is empty");
-        return;
-    }
-
-    const payload = cart.map(item => ({
-        id: item.id,
-        qty: item.qty
-    }));
-
-    fetch("/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error);
-
-        cart = [];
-        updateCartDisplay();
-
-        loadOrders();
-    });
-}
-
-/* ---------------- delete order ---------------- */
-function deleteOrder(id) {
-    fetch(`/orders/${id}`, {
-        method: "DELETE"
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error);
-        loadOrders();
-    });
-}
-
-/* ---------------- delete product ---------------- */
-function deleteProduct(id) {
-    fetch(`/products/${id}`, {
-        method: "DELETE"
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error);
-
-        loadProducts();
-        cart = [];
-        updateCartDisplay();
-    });
-}
-
-/* ---------------- create product ---------------- */
-function createProduct() {
-    const product = {
-        id: parseInt(document.getElementById("prodId").value),
-        name: document.getElementById("prodName").value,
-        price: parseFloat(document.getElementById("prodPrice").value)
-    };
-
-    fetch("/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(product)
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error);
-        loadProducts();
-    });
-}
-
-/* INIT */
-loadProducts();
-loadOrders();
 
 </script>
 
