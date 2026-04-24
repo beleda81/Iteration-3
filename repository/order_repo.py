@@ -10,3 +10,4 @@ class OrderRepository:
 
     def list_all(self):
         return list(self.orders.values())
+
